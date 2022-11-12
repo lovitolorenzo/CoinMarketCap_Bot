@@ -1,0 +1,147 @@
+import requests
+import json
+import datetime
+
+class Report:
+    def __init__(self):
+        self.url = 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest'
+
+        self.params = {
+        'start':'1',
+        'limit':5000,
+        'convert':'USD'
+    }
+
+        self.headers = {
+        'Accepts': 'application/json',
+        'X-CMC_PRO_API_KEY': '8b1af74b-28fd-4c01-838e-71d152144e7c'
+    }
+
+    def dati_criptovalute(self):
+        dati=requests.get(url=self.url,params=self.params,headers=self.headers).json()
+        return dati
+
+    def criptovaluta_volume_maggiore(self,dati):
+        currencies_volume = 0
+        currency_max = []
+        for currency in dati['data']:
+            if currency['quote']['USD']['volume_24h']>currencies_volume:
+                currency_max=currency['name']
+                currencies_volume=currency['quote']['USD']['volume_24h']
+        print(f"\nLa criptovaluta con il volume maggiore nelle ultime 24 ore Ã¨ : {currency_max} con {currencies_volume}$\n")
+        return currency_max, currencies_volume
+
+
+    def criptovalute_incremento_peggiori(self,dati):
+        lista_valute={}
+        lista_minore=[]
+        for currency in dati['data']:
+            lista_valute[currency['quote']['USD']['percent_change_24h']] = currency['name']
+        for k in sorted(lista_valute.keys()):
+            if len(lista_minore)<10:
+                lista_minore.append((lista_valute[k],k))
+            else:
+                break
+        print ("\nLa lista delle 10 criptovalute peggiori per incremento in percentuale Ã¨:\n")
+        [print(x) for x in lista_minore]
+        return lista_minore
+
+    def criptovalute_incremento_migliori(self, dati):
+        lista_valute = {}
+        lista_maggiore = []
+        for currency in dati['data']:
+            lista_valute[currency['quote']['USD']['percent_change_24h']] = currency['name']
+        for k in sorted(lista_valute.keys(), reverse=True):
+            if len(lista_maggiore) < 10:
+                lista_maggiore.append((lista_valute[k], k))
+            else:
+                break
+        print("\nLa lista delle 10 criptovalute migliori per incremento in percentuale Ã¨:\n")
+        [print(x) for x in lista_maggiore]
+        return lista_maggiore
+
+    def acquisto_criptovalute_volume_maggiore (self,dati):
+        prezzo=0
+        valute_volume_maggiore=[]
+        for currency in dati['data']:
+            if currency['quote']['USD']['volume_24h'] > 76000000:
+                prezzo+=currency['quote']['USD']['price']
+                valute_volume_maggiore.append(currency['name'])
+        print("\nLa lista delle criptovalute il cui volume nelle ultime 24 ore Ã¨ stato maggiore di 76000000$ Ã¨ :\n")
+        [print(x) for x in valute_volume_maggiore]
+        print(f"\nLa quantitÃ  di denaro necessaria per acquistare una unitÃ  di tutte queste criptovalute Ã¨ : {prezzo}$\n")
+        return prezzo
+
+    def acquisto_criptovalute_capitalizzazione_maggiore (self,dati):
+            lista_capitalizzazione_valute = {}
+            lista_top20 = []
+            prezzo_totale = 0
+
+            for currency in dati['data']:
+                lista_capitalizzazione_valute[currency['quote']['USD']['market_cap']]=currency['name']
+            for k in sorted(lista_capitalizzazione_valute.keys(),reverse=True):
+                if len(lista_top20) < 20:
+                    lista_top20.append((lista_capitalizzazione_valute[k], k))
+                else:
+                    break
+
+            for currency in dati['data']:
+                for y in range(20):
+                    if lista_top20[y][0]==currency['name']:
+                        prezzo_totale+=currency['quote']['USD']['price']
+
+            print ("\nLe criptovalute con maggiore capitalizzazzione sono : \n")
+            [print(x) for x in lista_top20]
+            print (f"\nLa quantitÃ  di denaro necessaria per acquistare una unitÃ  di ciascuna delle prime 20 criptovalute Ã¨ : {prezzo_totale}$\n")
+            return prezzo_totale
+
+    def acquisto_criptovalute_capitalizzazione_maggiore_giorno_precedente (self,dati):
+        lista_capitalizzazione_valute = {}
+        lista_top20 = []
+        prezzo_totale = 0
+        prezzo_totale_precedente = 0
+
+        for currency in dati['data']:
+            lista_capitalizzazione_valute[currency['quote']['USD']['market_cap']] = currency['name']
+        for k in sorted(lista_capitalizzazione_valute.keys(), reverse=True):
+            if len(lista_top20) < 20:
+                lista_top20.append((lista_capitalizzazione_valute[k], k))
+            else:
+                break
+
+        for currency in dati['data']:
+            for y in range(20):
+                if lista_top20[y][0] == currency['name']:
+                    prezzo_totale_precedente += currency['quote']['USD']['price']-((currency['quote']['USD']['price']*currency['quote']['USD']['percent_change_24h'])/100)
+                    prezzo_totale += currency['quote']['USD']['price']
+
+        perdita_guadagno_percentuale = ((prezzo_totale_precedente * 100) - (prezzo_totale * 100)) / -prezzo_totale
+        print (f"Il prezzo totale acquistando una unitÃ  delle criptovalute con capitalizzazione piÃ¹ alta il giorno precedente Ã¨ : {prezzo_totale_precedente}")
+        print (f"Il prezzo totale acquistando una unitÃ  delle criptovalute con capitalizzazione piÃ¹ alta oggi Ã¨ : {prezzo_totale}")
+        print (f"La percentuale di guadagno o perdita Ã¨ : {perdita_guadagno_percentuale}")
+        return perdita_guadagno_percentuale
+
+risultati=Report()
+
+data1=risultati.criptovaluta_volume_maggiore(risultati.dati_criptovalute())
+data2=risultati.criptovalute_incremento_migliori(risultati.dati_criptovalute())
+data3=risultati.criptovalute_incremento_peggiori(risultati.dati_criptovalute())
+data4=risultati.acquisto_criptovalute_capitalizzazione_maggiore(risultati.dati_criptovalute())
+data5=risultati.acquisto_criptovalute_volume_maggiore(risultati.dati_criptovalute())
+data6=risultati.acquisto_criptovalute_capitalizzazione_maggiore_giorno_precedente(risultati.dati_criptovalute())
+data="La criptovaluta col volume maggiore : ",data1,"Le 10 criptovalute con l'incremento maggiore sono : ",data2,"Le criptovalute con l'incremento peggiore sono : ",data3,"La quantita' di denaro per acquistare una unita' di tutte le criptovalute con capitalizzazione maggiore : ",data4,"La quantita' di denaro per acquistare una unita' di tutte le criptovalute con volume delle ultime 24 ore superiore a 76000000 : ",data5,"La percentuale di guadagno o perdita acquistando una unita' delle prime 20 criptovalute per capitalizzazione il giorno precedente :",data6
+
+timestamp=datetime.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
+
+with open(timestamp+".json", "w") as outfile:
+    json.dump(data, outfile, indent="\t")
+
+
+
+
+
+
+
+
+
+
